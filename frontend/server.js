@@ -2,6 +2,12 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
 
+const path = require("path");
+
+// ✅ Serve static files from ../public
+app.use(express.static(path.join(__dirname, "../public")));
+
+
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
@@ -11,8 +17,8 @@ app.set("views", "../views");
 const users = [
   { username: "prakul", password: "1234" },
   { username: "abhay", password: "5678" },
-  { username: "devapriya", password: "abcd" }
-  { username : "rohan", password :"xyz"}
+  { username: "devapriya", password: "abcd" },
+  { username : "rohan", password :"xyz"},
 ];
 
 // GET Login Page
