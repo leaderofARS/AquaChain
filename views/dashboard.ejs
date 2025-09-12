@@ -12,9 +12,10 @@
       box-shadow: 0 12px 24px rgba(0,0,0,0.15);
     }
   </style>
-  <script src="/socket.io/socket.io.js"></script>
+
 </head>
-<body class="min-h-screen w-full bg-no-repeat bg-cover bg-center" style="background-image: url('/bg.svg');">
+<body class="min-h-screen w-full bg-no-repeat bg-cover bg-center" 
+      style="background-image: url('/bg.png');">
 
 
   <!-- Navbar -->
@@ -58,17 +59,20 @@
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
         <!-- Soil Moisture -->
         <div class="bg-white p-8 rounded-2xl shadow-lg hover-float transition transform text-center">
-          <p id="soilValue" class="text-5xl font-extrabold text-[#38A169]">0%</p>
+
+          <p class="text-5xl font-extrabold text-[#38A169]" data-value="32">0%</p>
           <p class="text-gray-600 mt-3 text-lg">Soil Moisture 🌱</p>
         </div>
         <!-- Temperature -->
         <div class="bg-white p-8 rounded-2xl shadow-lg hover-float transition transform text-center">
-          <p id="tempValue" class="text-5xl font-extrabold text-[#FFD166]">0°C</p>
+
+          <p class="text-5xl font-extrabold text-[#FFD166]" data-value="29">0°C</p>
           <p class="text-gray-600 mt-3 text-lg">Temperature 🌡</p>
         </div>
         <!-- Humidity -->
         <div class="bg-white p-8 rounded-2xl shadow-lg hover-float transition transform text-center">
-          <p id="humValue" class="text-5xl font-extrabold text-[#00B4D8]">0%</p>
+
+          <p class="text-5xl font-extrabold text-[#00B4D8]" data-value="65">0%</p>
           <p class="text-gray-600 mt-3 text-lg">Humidity 💧</p>
         </div>
       </div>
@@ -145,50 +149,67 @@
 
   </div>
 
-  <!-- JS: Socket telemetry, Pump Toggle, Recommendation -->
+
+  <!-- JS: Pump Toggle, AI Recommendation, Sensor Animation -->
   <script>
-    const pumpStatus = document.getElementById('pumpStatus');
-    const pumpToggle = document.getElementById('pumpToggle');
-    const soilEl = document.getElementById('soilValue');
-    const tempEl = document.getElementById('tempValue');
-    const humEl  = document.getElementById('humValue');
-    const recommendationEl = document.getElementById('recommendation');
+    // Pump Toggle Logic
+    const pumpStatus = document.getElementById("pumpStatus");
+    const pumpToggle = document.getElementById("pumpToggle");
 
-    // Socket.io telemetry
-    const socket = io({ path: '/socket.io', transports: ['websocket', 'polling'] });
-    socket.on('telemetry', (msg) => {
-      // Expected fields: soil_moisture, temp_c, humidity_pct, valve_state
-      if (typeof msg.soil_moisture === 'number') soilEl.textContent = msg.soil_moisture + '%';
-      if (typeof msg.temp_c === 'number') tempEl.textContent = msg.temp_c.toFixed(1) + '°C';
-      if (typeof msg.humidity_pct === 'number') humEl.textContent = msg.humidity_pct + '%';
-      if (typeof msg.valve_state !== 'undefined') {
-        const on = !!msg.valve_state;
-        pumpStatus.textContent = on ? 'ON' : 'OFF';
-        pumpStatus.classList.toggle('text-green-600', on);
-        pumpStatus.classList.toggle('text-red-600', !on);
-        pumpToggle.textContent = on ? 'Turn OFF' : 'Turn ON';
+    pumpToggle.addEventListener("click", () => {
+      if (pumpStatus.textContent === "OFF") {
+        pumpStatus.textContent = "ON";
+        pumpStatus.classList.replace("text-red-600", "text-green-600");
+        pumpToggle.textContent = "Turn OFF";
+        pumpToggle.classList.remove("bg-gradient-to-r", "from-[#006D77]", "to-[#00B4D8]");
+        pumpToggle.classList.add("bg-red-600", "hover:bg-red-700");
+      } else {
+        pumpStatus.textContent = "OFF";
+        pumpStatus.classList.replace("text-green-600", "text-red-600");
+        pumpToggle.textContent = "Turn ON";
+        pumpToggle.classList.remove("bg-red-600", "hover:bg-red-700");
+        pumpToggle.classList.add("bg-gradient-to-r", "from-[#006D77]", "to-[#00B4D8]");
       }
-      updateRecommendation();
     });
 
-    // Pump toggle (local UI only; backend action to be wired in later)
-    pumpToggle.addEventListener('click', () => {
-      const isOff = pumpStatus.textContent === 'OFF';
-      pumpStatus.textContent = isOff ? 'ON' : 'OFF';
-      pumpStatus.classList.toggle('text-green-600', isOff);
-      pumpStatus.classList.toggle('text-red-600', !isOff);
-      pumpToggle.textContent = isOff ? 'Turn OFF' : 'Turn ON';
-    });
-
+    // Smart Recommendation Logic
+    const recommendationEl = document.getElementById("recommendation");
     function updateRecommendation() {
-      const soil = parseInt(soilEl.textContent) || 0;
-      const temp = parseInt(tempEl.textContent) || 0;
-      if (soil < 40 || temp > 30) {
+      const values = document.querySelectorAll("[data-value]");
+      let soilMoistureValue = parseInt(values[0].getAttribute("data-value"));
+      let temperatureValue = parseInt(values[1].getAttribute("data-value"));
+
+      if (soilMoistureValue < 40 || temperatureValue > 30) {
         recommendationEl.textContent = '✅ Irrigation recommended soon (low soil moisture / high temperature).';
       } else {
         recommendationEl.textContent = '🌱 No irrigation needed (soil moisture is sufficient).';
       }
     }
+
+    updateRecommendation();
+
+    // Animate Sensor Values
+    function animateValue(el, end, duration=1000, suffix="") {
+      let start = 0;
+      let startTime = null;
+      function step(timestamp) {
+        if (!startTime) startTime = timestamp;
+        const progress = Math.min((timestamp - startTime) / duration, 1);
+        el.textContent = Math.floor(progress * (end - start) + start) + suffix;
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        }
+      }
+      window.requestAnimationFrame(step);
+    }
+
+    document.querySelectorAll("[data-value]").forEach(p => {
+      const endValue = parseInt(p.getAttribute("data-value"));
+      let suffix = "";
+      if (p.textContent.includes("%")) suffix = "%";
+      if (p.textContent.includes("°C")) suffix = "°C";
+      animateValue(p, endValue, 1200, suffix);
+    });
   </script>
 </body>
 </html>
