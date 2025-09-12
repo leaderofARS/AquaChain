@@ -1,78 +1,18 @@
-version: '3.9'
-
+version: '3.8'
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: postgres
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  pgadmin:
-    image: dpage/pgadmin4:8.12
-    container_name: pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@local
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "5050:80"
-    depends_on:
-      - postgres
-
   backend:
-    image: node:20-alpine
-    container_name: backend
-    working_dir: /app
-    command: sh -c "npm ci || npm install && node src/index.js"
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      - DB_URI=mongodb://mongo:27017/smart_irrigation
+    depends_on:
+      - mongo
+  frontend:
+    build: ./frontend
     ports:
       - "3000:3000"
-    environment:
-      NODE_ENV: development
-      PORT: ${PORT}
-      DATABASE_URL: ${DATABASE_URL}
-      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN}
-      SEPOLIA_RPC: ${SEPOLIA_RPC}
-      DEPLOYER_KEY: ${DEPLOYER_KEY}
-      CONTRACT_ADDRESS: ${CONTRACT_ADDRESS}
-    volumes:
-      - ./backend:/app
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  frontend:
-    image: node:20-alpine
-    container_name: frontend
-    working_dir: /app
-    command: sh -c "npm ci || npm install && npm run dev -- --host"
+  mongo:
+    image: mongo:latest
     ports:
-      - "5173:5173"
-    environment:
-      VITE_BACKEND_URL: http://localhost:3000
-    volumes:
-      - ./frontend:/app
-    depends_on:
-      - backend
-
-  hardhat:
-    image: node:20-alpine
-    container_name: hardhat
-    working_dir: /app
-    command: sh -c "npm init -y >/dev/null 2>&1 || true; npm install --silent --no-progress hardhat --save-dev && npx hardhat node --hostname 0.0.0.0"
-    ports:
-      - "8545:8545"
-    volumes:
-      - ./contracts:/app
-
-volumes:
-  pgdata:
+      - "27017:27017"

@@ -1,17 +1,9 @@
 {
-  "name": "aquachain-backend",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
+  "name": "smart-irrigation-backend",
+  "version": "1.0.0",
+  "main": "src/index.js",
   "scripts": {
-    "dev": "node src/index.js",
     "start": "node src/index.js"
   },
-  "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "ethers": "^6.12.1",
-    "express": "^4.19.2",
-    "socket.io": "^4.7.5"
-  }
+  "dependencies": {}
 }

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import express from 'express';
 import http from 'http';
 import cors from 'cors';
@@ -63,5 +64,7 @@ server.listen(port, host, () => {
   console.log(`Backend listening on ${host}:${port}`);
 });
 
+=======
+>>>>>>> parent of 6b39b0b (Added embedded, frontend)
 // Entry point for backend
 console.log('Backend server starting...');
