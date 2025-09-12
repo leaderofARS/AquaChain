@@ -12,6 +12,7 @@
       box-shadow: 0 12px 24px rgba(0,0,0,0.15);
     }
   </style>
+
 </head>
 <body class="min-h-screen w-full bg-no-repeat bg-cover bg-center" 
       style="background-image: url('/bg.png');">
@@ -58,16 +59,19 @@
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
         <!-- Soil Moisture -->
         <div class="bg-white p-8 rounded-2xl shadow-lg hover-float transition transform text-center">
+
           <p class="text-5xl font-extrabold text-[#38A169]" data-value="32">0%</p>
           <p class="text-gray-600 mt-3 text-lg">Soil Moisture 🌱</p>
         </div>
         <!-- Temperature -->
         <div class="bg-white p-8 rounded-2xl shadow-lg hover-float transition transform text-center">
+
           <p class="text-5xl font-extrabold text-[#FFD166]" data-value="29">0°C</p>
           <p class="text-gray-600 mt-3 text-lg">Temperature 🌡</p>
         </div>
         <!-- Humidity -->
         <div class="bg-white p-8 rounded-2xl shadow-lg hover-float transition transform text-center">
+
           <p class="text-5xl font-extrabold text-[#00B4D8]" data-value="65">0%</p>
           <p class="text-gray-600 mt-3 text-lg">Humidity 💧</p>
         </div>
@@ -145,6 +149,7 @@
 
   </div>
 
+
   <!-- JS: Pump Toggle, AI Recommendation, Sensor Animation -->
   <script>
     // Pump Toggle Logic
@@ -180,6 +185,7 @@
         recommendationEl.textContent = '🌱 No irrigation needed (soil moisture is sufficient).';
       }
     }
+
     updateRecommendation();
 
     // Animate Sensor Values
