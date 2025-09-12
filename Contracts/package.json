@@ -1,9 +1,20 @@
 {
-  "name": "smart-irrigation-contracts",
-  "version": "1.0.0",
-  "main": "contracts/IrrigationAudit.sol",
-  "scripts": {
-    "test": "npx hardhat test"
+  "name": "aquachain-contracts",
+  "private": true,
+  "version": "0.1.0",
+  "devDependencies": {
+    "hardhat": "^2.22.9"
   },
-  "dependencies": {}
+  "scripts": {
+    "node": "npx hardhat node --hostname 0.0.0.0",
+    "compile": "npx hardhat compile"
+  },
+  "main": "hardhat.config.js",
+  "directories": {
+    "test": "test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
 }

@@ -1,0 +1,32 @@
+#pragma once
+
+// Fill these values and copy this file to config.h
+
+#define WIFI_SSID      "YOUR_WIFI_SSID"
+#define WIFI_PASS      "YOUR_WIFI_PASSWORD"
+
+// Backend settings (use your computer's LAN IP for local dev, not localhost)
+#define BACKEND_HOST   "192.168.1.100"   // e.g., 192.168.1.20
+#define BACKEND_PORT   3000
+
+#define DEVICE_ID      "esp32-dev-01"
+#define DEVICE_ZONE    "A"
+#define DEVICE_TOKEN   "replace-with-device-token"
+
+// Hysteresis thresholds (% moisture)
+#define MOISTURE_LOW   30
+#define MOISTURE_HIGH  40
+
+// Relay minimum ON/OFF durations (milliseconds)
+#define MIN_ON_MS      60000   // 60s
+#define MIN_OFF_MS     60000   // 60s
+
+// Sampling and networking intervals
+#define SAMPLE_INTERVAL_MS      2000
+#define POST_INTERVAL_MS        5000
+#define CONTROL_POLL_MS         7000
+#define QUEUE_FLUSH_INTERVAL_MS 8000
+
+// Soil sensor calibration (adjust after testing)
+#define AIR_VALUE    3200  // Dry soil
+#define WATER_VALUE  1400  // Wet soil
