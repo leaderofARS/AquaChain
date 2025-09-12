@@ -1,0 +1,28 @@
+dashboard.ejs
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-900">
+
+  <!-- Navbar -->
+  <nav class="bg-blue-900 text-white p-4 shadow-md">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <span class="text-xl font-bold">NOVA BANKING</span>
+      <a href="/login" class="text-sm hover:underline">Logout</a>
+    </div>
+  </nav>
+
+  <!-- Dashboard Content -->
+  <div class="flex items-center justify-center min-h-screen">
+    <div class="bg-white shadow-lg rounded-xl p-10 max-w-md text-center">
+      <h1 class="text-2xl font-bold text-blue-900 mb-4">Welcome, <%= username %> 🎉</h1>
+      <p class="text-gray-700">You have successfully logged in to the employee dashboard.</p>
+    </div>
+  </div>
+
+</body>
+</html>
