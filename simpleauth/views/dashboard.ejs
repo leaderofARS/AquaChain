@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Aquachain Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <style>
+    .hover-float:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+<body class="min-h-screen w-full bg-no-repeat bg-cover bg-center" style="background-image: url('/bg.png');">
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 w-full z-50 bg-white/20 backdrop-blur-md border-b border-white/30 shadow-md">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <img src="/aquachain-logo.png" alt="AQUACHAIN Logo" class="h-10 w-10 object-contain">
+        <span class="text-[#006D77] text-2xl font-bold tracking-wide">AQUA CHAIN</span>
+      </div>
+      <div class="flex items-center">
+        <a href="/login" class="bg-[#00B4D8] text-white font-semibold px-5 py-2.5 rounded-lg shadow transition text-lg flex items-center space-x-2 hover:bg-white hover:text-[#00B4D8] hover:shadow-md">
+          <i class="bx bx-log-out"></i><span>Logout</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative pt-28 pb-16 text-center">
+    <div class="relative z-10 mt-6">
+      <h1 class="text-5xl font-extrabold text-[#0A1F44] drop-shadow-lg">Welcome, <%= username %>!</h1>
+      <p class="text-lg text-[#0A1F44]/70 mt-2">Your smart irrigation dashboard is live</p>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <div class="relative max-w-7xl mx-auto px-6 space-y-16">
+
+    <!-- Live Sensor Data -->
+    <section class="relative space-y-6">
+      <h2 class="text-2xl font-bold text-[#000000] flex items-center space-x-2"><i class="bx bx-pulse text-[#0A1F44]"></i><span>Live Sensor Data</span></h2>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
+        <div class="bg-white p-8 rounded-2xl shadow-lg hover-float transition transform text-center">
+          <p class="text-5xl font-extrabold text-[#38A169]" data-value="32">0%</p>
+          <p class="text-gray-600 mt-3 text-lg">Soil Moisture 🌱</p>
+        </div>
+        <div class="bg-white p-8 rounded-2xl shadow-lg hover-float transition transform text-center">
+          <p class="text-5xl font-extrabold text-[#FFD166]" data-value="29">0°C</p>
+          <p class="text-gray-600 mt-3 text-lg">Temperature 🌡</p>
+        </div>
+        <div class="bg-white p-8 rounded-2xl shadow-lg hover-float transition transform text-center">
+          <p class="text-5xl font-extrabold text-[#00B4D8]" data-value="65">0%</p>
+          <p class="text-gray-600 mt-3 text-lg">Humidity 💧</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pump Control & AI Recommendation -->
+    <section class="relative grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div class="space-y-6">
+        <h2 class="text-2xl font-bold text-[#000000] flex items-center space-x-2"><i class="bx bx-power-off text-[#0A1F44]"></i><span>Pump Control</span></h2>
+        <div class="bg-white p-8 rounded-2xl shadow-lg hover-float flex flex-col items-center space-y-6">
+          <p class="text-gray-700 font-medium text-lg">Current Status: <span id="pumpStatus" class="font-bold text-red-600">OFF</span></p>
+          <button id="pumpToggle" class="px-8 py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-[#006D77] to-[#00B4D8] shadow-md hover:from-[#00B4D8] hover:to-[#90E0EF] transition text-lg">Turn ON</button>
+        </div>
+      </div>
+      <div class="space-y-6">
+        <h2 class="text-2xl font-bold text-[#000000] flex items-center space-x-2"><i class="bx bx-brain text-[#0A1F44]"></i><span>Smart Recommendation</span></h2>
+        <div class="bg-white p-8 rounded-2xl shadow-lg hover-float flex flex-col space-y-4">
+          <p class="text-gray-700 font-medium text-lg">System Suggestion:</p>
+          <div id="recommendation" class="p-6 rounded-lg bg-[#F0F4EF] shadow-inner text-gray-700 text-base">Loading recommendation...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Blockchain Logs -->
+    <section class="relative space-y-6 pb-12">
+      <h2 class="text-2xl font-bold text-[#000000] flex items-center space-x-2"><i class="bx bx-link-alt text-[#0A1F44]"></i><span>Blockchain Logs</span></h2>
+      <div class="bg-white p-6 rounded-2xl shadow-lg hover-float overflow-x-auto">
+        <table class="min-w-full border border-gray-200 text-sm text-left">
+          <thead class="bg-[#F0F4EF] text-gray-700 font-semibold">
+            <tr>
+              <th class="px-6 py-3 border">Tx Hash</th>
+              <th class="px-6 py-3 border">Action</th>
+              <th class="px-6 py-3 border">Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="odd:bg-white even:bg-[#F9FAFB] hover:bg-[#E0FBFC] transition">
+              <td class="px-6 py-3 border text-[#00B4D8] hover:underline"><a href="https://sepolia.etherscan.io/tx/0x123" target="_blank">0x123…ab</a></td>
+              <td class="px-6 py-3 border">Pump ON</td>
+              <td class="px-6 py-3 border">10:20 AM</td>
+            </tr>
+            <tr class="odd:bg-white even:bg-[#F9FAFB] hover:bg-[#E0FBFC] transition">
+              <td class="px-6 py-3 border text-[#00B4D8] hover:underline"><a href="https://sepolia.etherscan.io/tx/0x456" target="_blank">0x456…cd</a></td>
+              <td class="px-6 py-3 border">Pump OFF</td>
+              <td class="px-6 py-3 border">10:45 AM</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    // Pump Control
+    const pumpStatus = document.getElementById("pumpStatus");
+    const pumpToggle = document.getElementById("pumpToggle");
+    pumpToggle.addEventListener("click", () => {
+      if (pumpStatus.textContent === "OFF") {
+        pumpStatus.textContent = "ON";
+        pumpStatus.classList.replace("text-red-600", "text-green-600");
+        pumpToggle.textContent = "Turn OFF";
+        pumpToggle.classList.remove("bg-gradient-to-r", "from-[#006D77]", "to-[#00B4D8]");
+        pumpToggle.classList.add("bg-red-600", "hover:bg-red-700");
+      } else {
+        pumpStatus.textContent = "OFF";
+        pumpStatus.classList.replace("text-green-600", "text-red-600");
+        pumpToggle.textContent = "Turn ON";
+        pumpToggle.classList.remove("bg-red-600", "hover:bg-red-700");
+        pumpToggle.classList.add("bg-gradient-to-r", "from-[#006D77]", "to-[#00B4D8]");
+      }
+    });
+
+    // Recommendation
+    const recommendationEl = document.getElementById("recommendation");
+    function updateRecommendation() {
+      const values = document.querySelectorAll("[data-value]");
+      let soilMoistureValue = parseInt(values[0].getAttribute("data-value"));
+      let temperatureValue = parseInt(values[1].getAttribute("data-value"));
+      if (soilMoistureValue < 40 || temperatureValue > 30) {
+        recommendationEl.textContent = "✅ Irrigation recommended soon (low soil moisture / high temperature).";
+      } else {
+        recommendationEl.textContent = "🌱 No irrigation needed (soil moisture is sufficient).";
+      }
+    }
+    updateRecommendation();
+
+    // Counter Animation
+    function animateValue(el, end, duration = 1200, suffix = "") {
+      let start = 0;
+      let startTime = null;
+      function step(timestamp) {
+        if (!startTime) startTime = timestamp;
+        let progress = Math.min((timestamp - startTime) / duration, 1);
+        let value = Math.floor(progress * end);
+        el.textContent = value + suffix;
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        }
+      }
+      requestAnimationFrame(step);
+    }
+
+    document.querySelectorAll("[data-value]").forEach(el => {
+      let target = parseInt(el.getAttribute("data-value"));
+      let suffix = el.textContent.replace(/[0-9]/g, "");
+      animateValue(el, target, 1200, suffix);
+    });
+  </script>
+</body>
+</html>
