@@ -9,6 +9,7 @@ artifacts/
 cache/
 # Env
 .env
+
 .env.example
 # Others
 .DS_Store
