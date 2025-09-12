@@ -25,7 +25,7 @@ def generate_csv(path='models/data/sim.csv', n=2000):
     with open(path,'w',newline='') as f:
         w = csv.DictWriter(f, fieldnames=['ts','soil_moisture','temp_c','humidity_pct','label'])
         w.writeheader()
-        t = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        t = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=1)
         for i in range(n):
             row = gen_row(t)
             w.writerow(row)
