@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Aquachain Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <style>
+    /* Card hover */
+    .hover-float:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+    }
+  </style>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="min-h-screen w-full bg-no-repeat bg-cover bg-center" style="background-image: url('/bg.svg');">
+
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 w-full z-50 bg-white/20 backdrop-blur-md border-b border-white/30 shadow-md">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <i class='bx bx-droplet text-[#006D77] text-3xl'></i>
+        <span class="text-[#006D77] text-2xl font-bold tracking-wide">AQUA CHAIN</span>
+      </div>
+      <div class="flex items-center">
+        <a href="/login" 
+          class="bg-[#00B4D8] text-white font-semibold px-5 py-2.5 rounded-lg shadow transition text-lg flex items-center space-x-2
+                 hover:bg-white hover:text-[#00B4D8] hover:shadow-md">
+          <i class='bx bx-log-out'></i>
+          <span>Logout</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative pt-36 pb-32 text-center">
+    <div class="relative z-10 mt-10">
+      <h1 class="text-5xl font-extrabold text-white drop-shadow-lg">
+        Welcome, <%= username %>
+      </h1>
+      <p class="text-lg text-white/80 mt-3">
+        Your smart irrigation and blockchain dashboard
+      </p>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <div class="relative max-w-7xl mx-auto px-6 space-y-32">
+    <!-- Section A: Live Sensor Data -->
+    <section class="relative space-y-6">
+      <h2 class="text-2xl font-bold text-[#006D77] flex items-center space-x-2">
+        <i class='bx bx-pulse text-[#00B4D8]'></i>
+        <span>Live Sensor Data</span>
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
+        <!-- Soil Moisture -->
+        <div class="bg-white p-8 rounded-2xl shadow-lg hover-float transition transform text-center">
+          <p id="soilValue" class="text-5xl font-extrabold text-[#38A169]">0%</p>
+          <p class="text-gray-600 mt-3 text-lg">Soil Moisture 🌱</p>
+        </div>
+        <!-- Temperature -->
+        <div class="bg-white p-8 rounded-2xl shadow-lg hover-float transition transform text-center">
+          <p id="tempValue" class="text-5xl font-extrabold text-[#FFD166]">0°C</p>
+          <p class="text-gray-600 mt-3 text-lg">Temperature 🌡</p>
+        </div>
+        <!-- Humidity -->
+        <div class="bg-white p-8 rounded-2xl shadow-lg hover-float transition transform text-center">
+          <p id="humValue" class="text-5xl font-extrabold text-[#00B4D8]">0%</p>
+          <p class="text-gray-600 mt-3 text-lg">Humidity 💧</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section B + D: Pump Control & AI Recommendation -->
+    <section class="relative grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <!-- Pump Control -->
+      <div class="space-y-6">
+        <h2 class="text-2xl font-bold text-[#006D77] flex items-center space-x-2">
+          <i class='bx bx-power-off text-red-500'></i>
+          <span>Pump Control</span>
+        </h2>
+        <div class="bg-white p-8 rounded-2xl shadow-lg hover-float flex flex-col items-center space-y-6">
+          <p class="text-gray-700 font-medium text-lg">Current Status: 
+            <span id="pumpStatus" class="font-bold text-red-600">OFF</span>
+          </p>
+          <button id="pumpToggle" 
+            class="px-8 py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-[#006D77] to-[#00B4D8] shadow-md hover:from-[#00B4D8] hover:to-[#90E0EF] transition text-lg">
+            Turn ON
+          </button>
+        </div>
+      </div>
+
+      <!-- AI Recommendation -->
+      <div class="space-y-6">
+        <h2 class="text-2xl font-bold text-[#006D77] flex items-center space-x-2">
+          <i class='bx bx-brain text-[#FFD166]'></i>
+          <span>Smart Recommendation</span>
+        </h2>
+        <div class="bg-white p-8 rounded-2xl shadow-lg hover-float flex flex-col space-y-4">
+          <p class="text-gray-700 font-medium text-lg">System Suggestion:</p>
+          <div id="recommendation" class="p-6 rounded-lg bg-[#F0F4EF] shadow-inner text-gray-700 text-base">
+            Loading recommendation...
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section C: Blockchain Logs -->
+    <section class="relative space-y-6">
+      <h2 class="text-2xl font-bold text-[#006D77] flex items-center space-x-2">
+        <i class='bx bx-link-alt text-[#00B4D8]'></i>
+        <span>Blockchain Logs</span>
+      </h2>
+      <div class="bg-white p-6 rounded-2xl shadow-lg hover-float overflow-x-auto">
+        <table class="min-w-full border border-gray-200 text-sm text-left">
+          <thead class="bg-[#F0F4EF] text-gray-700 font-semibold">
+            <tr>
+              <th class="px-6 py-3 border">Tx Hash</th>
+              <th class="px-6 py-3 border">Action</th>
+              <th class="px-6 py-3 border">Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="odd:bg-white even:bg-[#F9FAFB] hover:bg-[#E0FBFC] transition">
+              <td class="px-6 py-3 border text-[#00B4D8] hover:underline">
+                <a href="https://sepolia.etherscan.io/tx/0x123" target="_blank">0x123…ab</a>
+              </td>
+              <td class="px-6 py-3 border">Pump ON</td>
+              <td class="px-6 py-3 border">10:20 AM</td>
+            </tr>
+            <tr class="odd:bg-white even:bg-[#F9FAFB] hover:bg-[#E0FBFC] transition">
+              <td class="px-6 py-3 border text-[#00B4D8] hover:underline">
+                <a href="https://sepolia.etherscan.io/tx/0x456" target="_blank">0x456…cd</a>
+              </td>
+              <td class="px-6 py-3 border">Pump OFF</td>
+              <td class="px-6 py-3 border">10:45 AM</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- JS: Socket telemetry, Pump Toggle, Recommendation -->
+  <script>
+    const pumpStatus = document.getElementById('pumpStatus');
+    const pumpToggle = document.getElementById('pumpToggle');
+    const soilEl = document.getElementById('soilValue');
+    const tempEl = document.getElementById('tempValue');
+    const humEl  = document.getElementById('humValue');
+    const recommendationEl = document.getElementById('recommendation');
+
+    // Socket.io telemetry
+    const socket = io({ path: '/socket.io', transports: ['websocket', 'polling'] });
+    socket.on('telemetry', (msg) => {
+      // Expected fields: soil_moisture, temp_c, humidity_pct, valve_state
+      if (typeof msg.soil_moisture === 'number') soilEl.textContent = msg.soil_moisture + '%';
+      if (typeof msg.temp_c === 'number') tempEl.textContent = msg.temp_c.toFixed(1) + '°C';
+      if (typeof msg.humidity_pct === 'number') humEl.textContent = msg.humidity_pct + '%';
+      if (typeof msg.valve_state !== 'undefined') {
+        const on = !!msg.valve_state;
+        pumpStatus.textContent = on ? 'ON' : 'OFF';
+        pumpStatus.classList.toggle('text-green-600', on);
+        pumpStatus.classList.toggle('text-red-600', !on);
+        pumpToggle.textContent = on ? 'Turn OFF' : 'Turn ON';
+      }
+      updateRecommendation();
+    });
+
+    // Pump toggle (local UI only; backend action to be wired in later)
+    pumpToggle.addEventListener('click', () => {
+      const isOff = pumpStatus.textContent === 'OFF';
+      pumpStatus.textContent = isOff ? 'ON' : 'OFF';
+      pumpStatus.classList.toggle('text-green-600', isOff);
+      pumpStatus.classList.toggle('text-red-600', !isOff);
+      pumpToggle.textContent = isOff ? 'Turn OFF' : 'Turn ON';
+    });
+
+    function updateRecommendation() {
+      const soil = parseInt(soilEl.textContent) || 0;
+      const temp = parseInt(tempEl.textContent) || 0;
+      if (soil < 40 || temp > 30) {
+        recommendationEl.textContent = '✅ Irrigation recommended soon (low soil moisture / high temperature).';
+      } else {
+        recommendationEl.textContent = '🌱 No irrigation needed (soil moisture is sufficient).';
+      }
+    }
+  </script>
+</body>
+</html>
