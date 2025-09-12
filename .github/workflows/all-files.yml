@@ -1,0 +1,31 @@
+name: All Files
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-files:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: List all files
+        run: |
+          find . -type f
+      - name: Show directory tree
+        run: |
+          tree -a -I '.git'
+      - name: Show disk usage
+        run: |
+          du -h --max-depth=2
+      - name: Show file sizes
+        run: |
+          ls -lhR
+      - name: Show file permissions
+        run: |
+          stat * || true

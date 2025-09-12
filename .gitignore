@@ -1,1 +1,37 @@
-.github
+
+# Node
+node_modules/
+# Python
+__pycache__/
+*.pyc
+# Solidity
+artifacts/
+cache/
+# Env
+.env
+.env.example
+# Others
+.DS_Store
+# IDE and OS
+.vscode/
+.idea/
+Thumbs.db
+*.swp
+# Build outputs
+dist/
+build/
+# Logs
+*.log
+# Embedded
+embedded/model/model_data.cc
+# Ops
+ops/screenshots/
+ops/demo_video.mp4
+ops/slides/
+# Models
+models/data/
+# Docker
+*.pid
+# Misc
+frontend/public/
+backend/tests/

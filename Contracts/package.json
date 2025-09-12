@@ -1,0 +1,9 @@
+{
+  "name": "smart-irrigation-contracts",
+  "version": "1.0.0",
+  "main": "contracts/IrrigationAudit.sol",
+  "scripts": {
+    "test": "npx hardhat test"
+  },
+  "dependencies": {}
+}
