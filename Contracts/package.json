@@ -1,9 +1,24 @@
 {
   "name": "smart-irrigation-contracts",
   "version": "1.0.0",
-  "main": "contracts/IrrigationAudit.sol",
+  "private": true,
   "scripts": {
-    "test": "npx hardhat test"
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:local": "hardhat run scripts/deploy.js",
+    "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia"
   },
-  "dependencies": {}
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.26.3"
+  },
+  "main": "hardhat.config.js",
+  "directories": {
+    "test": "test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
 }
