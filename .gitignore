@@ -9,8 +9,8 @@ artifacts/
 cache/
 # Env
 .env
-
-.env.example
+.env.*
+!.env.example
 # Others
 .DS_Store
 # IDE and OS
@@ -23,16 +23,40 @@ dist/
 build/
 # Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage/
 # Embedded
-embedded/model/model_data.cc
+Embedded/model/model_data.cc
+Embedded/firmware/**/config.h
 # Ops
 ops/screenshots/
 ops/demo_video.mp4
 ops/slides/
 # Models
-models/data/
+Models/data/
 # Docker
 *.pid
 # Misc
-frontend/public/
-backend/tests/
+Frontend/public/
+Backend/tests/
+
+./Contracts/.env
+# Added by Agent: ensure secrets and generated files are ignored
+Contracts/.env
+Backend/.env
+Embedded/.pio/
+# Generated TinyML model array
+Embedded/firmware/tflm/model_data.cc
+# ML artifacts
+Models/model.h5
+Models/model_quant.tflite
+Models/scaler.pkl
+Models/data/
+# Ops assets (case-correct)
+Ops/
+# Frontend/Backend paths (case-correct)
+Frontend/public/
+Backend/tests/

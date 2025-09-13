@@ -1,9 +1,25 @@
-# CI workflow for Smart Irrigation
 name: CI
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
 jobs:
-  build:
+  backend-and-contracts:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      # Add build steps here
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install backend deps
+        working-directory: Backend
+        run: npm ci || npm install
+      - name: Backend smoke test
+        working-directory: Backend
+        run: node -e "console.log('backend ok')"
+      - name: Install contracts deps
+        working-directory: Contracts
+        run: npm ci || npm install
+      - name: Compile contracts
+        working-directory: Contracts
+        run: npx hardhat compile

@@ -1,0 +1,10 @@
+# ignore local dependencies and metadata
+node_modules
+npm-debug.log
+*.log
+.git
+.gitignore
+coverage
+.DS_Store
+Thumbs.db
+

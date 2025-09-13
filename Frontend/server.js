@@ -1,25 +1,31 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const app = express();
-
 const path = require("path");
 
-// ✅ Serve static files from ../public
-app.use(express.static(path.join(__dirname, "../public")));
+const app = express();
 
+// Serve static files and EJS views from top-level AquaChain/views and AquaChain/public
+app.use(express.static(path.join(__dirname, "../public")));
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "../views"));
+
+// Health endpoint for external checks
+app.get("/health", (_req, res) => {
+  res.json({ ok: true, service: "frontend", ts: Date.now() });
+});
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
-app.set("view engine", "ejs");
-app.set("views", "../views");
 
-// JSON Array (3 Users)
+// JSON Array (sample users)
 const users = [
   { username: "prakul", password: "1234" },
   { username: "abhay", password: "5678" },
   { username: "devapriya", password: "abcd" },
-  { username : "rohan", password :"xyz"},
+  { username: "rohan", password: "xyz" },
 ];
+
+app.get("/", (_req, res) => res.redirect("/login"));
 
 // GET Login Page
 app.get("/login", (req, res) => {
@@ -29,12 +35,7 @@ app.get("/login", (req, res) => {
 // POST Login
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
-  console.log("Received:", username, password); // Debug line
-
- const user = users.find(
-  (u) => u.username === username.trim() && u.password === password.trim()
-);
-
+  const user = users.find((u) => u.username === username?.trim() && u.password === password?.trim());
   if (user) {
     res.render("dashboard", { username: user.username });
   } else {
@@ -42,18 +43,7 @@ app.post("/login", (req, res) => {
   }
 });
 
-
-app.listen(3000, () => {
-  console.log("Server running on http://localhost:3000/login");
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Frontend running on http://localhost:${PORT}/login`);
 });
-
-
-/**
- * Test Users (Login Credentials):
- * 
- * Username: prakul   | Password: 1234
- * Username: abhay    | Password: 5678
- * Username: devapriya| Password: abcd
- * 
- * Use any one of these to log in successfully ✅
- */

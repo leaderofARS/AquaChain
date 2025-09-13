@@ -1,0 +1,8 @@
+numpy>=1.26
+pandas>=2.2
+requests>=2.31
+scikit-learn>=1.3
+joblib>=1.3
+# CPU TensorFlow for Windows
+tensorflow>=2.13
+

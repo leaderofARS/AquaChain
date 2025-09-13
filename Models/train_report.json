@@ -1,0 +1,6 @@
+{
+  "val_accuracy": 0.94,
+  "epochs": 6,
+  "train_samples": 1596,
+  "val_samples": 400
+}

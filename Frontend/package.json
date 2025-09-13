@@ -1,9 +1,13 @@
 {
   "name": "smart-irrigation-frontend",
   "version": "1.0.0",
-  "main": "src/main.jsx",
+  "main": "server.js",
   "scripts": {
-    "dev": "vite"
+    "start": "node server.js"
   },
-  "dependencies": {}
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2"
+  }
 }

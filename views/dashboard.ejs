@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Aquachain Dashboard</title>
+  <script src="http://localhost:5000/socket.io/socket.io.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <style>
@@ -87,6 +88,10 @@
           <span>Pump Control</span>
         </h2>
         <div class="bg-white p-8 rounded-2xl shadow-lg hover-float flex flex-col items-center space-y-6">
+          <div class="w-full max-w-md grid grid-cols-1 gap-3">
+            <label class="text-sm text-gray-600">Device ID</label>
+            <input id="deviceId" type="text" value="esp32-devkitv1-01" class="w-full border rounded-lg px-3 py-2" />
+          </div>
           <p class="text-gray-700 font-medium text-lg">Current Status: 
             <span id="pumpStatus" class="font-bold text-red-600">OFF</span>
           </p>
@@ -94,6 +99,7 @@
             class="px-8 py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-[#006D77] to-[#00B4D8] shadow-md hover:from-[#00B4D8] hover:to-[#90E0EF] transition text-lg">
             Turn ON
           </button>
+          <p id="pumpMsg" class="text-sm text-gray-500"></p>
         </div>
       </div>
 
@@ -109,6 +115,39 @@
             Loading recommendation...
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- Last Control Indicator -->
+    <section class="relative space-y-3">
+      <h2 class="text-2xl font-bold text-[#006D77] flex items-center space-x-2">
+        <i class='bx bx-time-five text-[#00B4D8]'></i>
+        <span>Last Control</span>
+      </h2>
+      <div class="bg-white p-6 rounded-2xl shadow-lg hover-float">
+        <p id="lastControlText" class="text-gray-700">No control commands yet.</p>
+      </div>
+    </section>
+
+    <!-- Recent Readings -->
+    <section class="relative space-y-3">
+      <h2 class="text-2xl font-bold text-[#006D77] flex items-center space-x-2">
+        <i class='bx bx-history text-[#00B4D8]'></i>
+        <span>Recent Readings</span>
+      </h2>
+      <div class="bg-white p-6 rounded-2xl shadow-lg hover-float overflow-x-auto">
+        <table class="min-w-full border border-gray-200 text-sm text-left">
+          <thead class="bg-[#F0F4EF] text-gray-700 font-semibold">
+            <tr>
+              <th class="px-4 py-2 border">Time</th>
+              <th class="px-4 py-2 border">Device</th>
+              <th class="px-4 py-2 border">Moisture</th>
+              <th class="px-4 py-2 border">Temp</th>
+              <th class="px-4 py-2 border">Humid</th>
+            </tr>
+          </thead>
+          <tbody id="recentBody"></tbody>
+        </table>
       </div>
     </section>
 
@@ -152,12 +191,21 @@
 
   <!-- JS: Pump Toggle, AI Recommendation, Sensor Animation -->
   <script>
+    // Socket.io
+    const socket = io('http://localhost:5000', { path: '/socket.io' });
+
     // Pump Toggle Logic
     const pumpStatus = document.getElementById("pumpStatus");
     const pumpToggle = document.getElementById("pumpToggle");
 
-    pumpToggle.addEventListener("click", () => {
-      if (pumpStatus.textContent === "OFF") {
+    pumpToggle.addEventListener("click", async () => {
+      const deviceIdInput = document.getElementById("deviceId");
+      const deviceId = (deviceIdInput?.value || "esp32-devkitv1-01").trim();
+      const msg = document.getElementById("pumpMsg");
+      msg.textContent = "";
+
+      let turningOn = (pumpStatus.textContent === "OFF");
+      if (turningOn) {
         pumpStatus.textContent = "ON";
         pumpStatus.classList.replace("text-red-600", "text-green-600");
         pumpToggle.textContent = "Turn OFF";
@@ -169,6 +217,25 @@
         pumpToggle.textContent = "Turn ON";
         pumpToggle.classList.remove("bg-red-600", "hover:bg-red-700");
         pumpToggle.classList.add("bg-gradient-to-r", "from-[#006D77]", "to-[#00B4D8]");
+      }
+
+      // Call backend to enqueue control
+      try {
+        const apiBase = (location.port === '5000') ? '' : 'http://localhost:5000';
+        const resp = await fetch(`${apiBase}/api/irrigate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ device_id: deviceId, zone: 'zone-1', force_relay: turningOn, duration_ms: 5000 })
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        msg.textContent = `Command sent: force_relay=${turningOn} (enqueued=${data.enqueued || 0})`;
+        msg.classList.remove('text-red-600');
+        msg.classList.add('text-green-600');
+      } catch (e) {
+        msg.textContent = `Failed to send command: ${e.message}`;
+        msg.classList.remove('text-green-600');
+        msg.classList.add('text-red-600');
       }
     });
 
@@ -209,6 +276,52 @@
       if (p.textContent.includes("%")) suffix = "%";
       if (p.textContent.includes("°C")) suffix = "°C";
       animateValue(p, endValue, 1200, suffix);
+    });
+
+    // Recent readings helper
+    const recentBody = document.getElementById('recentBody');
+    function tsToTime(ts){ try { const d=new Date(typeof ts==='number'? ts: Number(ts)); return d.toLocaleTimeString(); } catch { return String(ts);} }
+    function addRecentRow(r){
+      const tr = document.createElement('tr');
+      tr.className = 'odd:bg-white even:bg-[#F9FAFB]';
+      tr.innerHTML = `<td class="px-4 py-2 border">${tsToTime(r.ts || Date.now())}</td>
+                      <td class="px-4 py-2 border">${r.device_id || ''}</td>
+                      <td class="px-4 py-2 border">${r.soil_moisture_pct ?? ''}%</td>
+                      <td class="px-4 py-2 border">${r.temp_c ?? ''}°C</td>
+                      <td class="px-4 py-2 border">${r.humidity_pct ?? ''}%</td>`;
+      recentBody.prepend(tr);
+      while (recentBody.children.length > 10) recentBody.removeChild(recentBody.lastChild);
+    }
+    async function loadRecent(){
+      try{
+        const resp = await fetch('http://localhost:5000/api/readings/recent?limit=10');
+        const data = await resp.json();
+        recentBody.innerHTML = '';
+        (data.rows||[]).forEach((r)=> addRecentRow(r));
+      }catch{}
+    }
+    loadRecent();
+
+    // Telemetry updates
+    socket.on('telemetry', (payload)=>{
+      if (payload && !payload.batch){
+        // Update live cards
+        const cards = document.querySelectorAll('[data-value]');
+        const moistEl = cards[0]; const tempEl = cards[1]; const humEl = cards[2];
+        if (typeof payload.soil_moisture_pct === 'number') moistEl.textContent = `${payload.soil_moisture_pct}%`;
+        if (typeof payload.temp_c === 'number') tempEl.textContent = `${payload.temp_c}°C`;
+        if (typeof payload.humidity_pct === 'number') humEl.textContent = `${payload.humidity_pct}%`;
+        addRecentRow(payload);
+      } else {
+        loadRecent();
+      }
+    });
+
+    // Last control indicator
+    const lastControlText = document.getElementById('lastControlText');
+    socket.on('control_enqueued', ({device_id, zone, command})=>{
+      const t = new Date().toLocaleTimeString();
+      lastControlText.textContent = `At ${t}, device ${device_id} => ${JSON.stringify(command)}${zone? ' (zone '+zone+')':''}`;
     });
   </script>
 </body>
