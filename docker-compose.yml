@@ -5,19 +5,30 @@ services:
       - "5000:5000"
     environment:
       - PORT=5000
-      - FRONTEND_ORIGIN=http://localhost:3000
+      - FRONTEND_ORIGIN=http://localhost:3000,http://localhost:5173
       - DATABASE_URL=postgresql://app:app_password@postgres:5432/aquachain
+      # Anchor worker settings
+      - RPC_URL=http://hardhat:8545
+      - RPC_WS=ws://hardhat:8545
+      - IRRIGATION_AUDIT_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
+      # Provide a Hardhat private key (example: first default account). Replace with your own if needed.
+      - PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
     volumes:
       - ./views:/app/views:ro
       - ./public:/app/public:ro
     depends_on:
       - postgres
+      - hardhat
   frontend:
     build: ./Frontend
     ports:
       - "3000:3000"
     environment:
       - PORT=3000
+      - BACKEND_BASE=http://localhost:5000
+    volumes:
+      - ./views:/app/views:ro
+      - ./public:/app/public:ro
   postgres:
     image: postgres:15-alpine
     environment:
@@ -34,7 +45,7 @@ services:
       - PGADMIN_DEFAULT_EMAIL=admin@example.com
       - PGADMIN_DEFAULT_PASSWORD=Admin123!
       - PGADMIN_CONFIG_MAX_LOGIN_ATTEMPTS=10
-      - PGADMIN_CONFIG_LOGIN_BANNER=Authorized use only
+      - PGADMIN_CONFIG_LOGIN_BANNER="'Authorized use only'"
     ports:
       - "5050:80"
     depends_on:

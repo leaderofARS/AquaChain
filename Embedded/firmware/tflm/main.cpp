@@ -120,7 +120,8 @@ void loop() {
   Serial.print("Inference time (us): "); Serial.println(dt);
   Serial.print("Prob irrigate: "); Serial.println(y, 4);
 
-  bool decision = (y >= 0.6f);
+  // Simple condition: relay ON only when instantaneous moisture < 30%
+  bool decision = (moisture_pct < 30.0f);
   setRelay(decision);
 
   Serial.print("ADC="); Serial.print(adc);

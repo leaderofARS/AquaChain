@@ -4,18 +4,37 @@ const path = require("path");
 
 const app = express();
 
-// Serve static files and EJS views from top-level AquaChain/views and AquaChain/public
-app.use(express.static(path.join(__dirname, "../public")));
+// Resolve base dir for shared views/public regardless of container path
+const candidateBases = [
+  path.resolve(__dirname, ".."),
+  path.resolve(__dirname)
+];
+const baseDir = candidateBases.find((d) => {
+  try { return require("fs").statSync(path.join(d, "views")).isDirectory(); } catch { return false; }
+}) || candidateBases[0];
+
+// Serve static and views
+app.use(express.static(path.join(baseDir, "public")));
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "../views"));
+app.set("views", path.join(baseDir, "views"));
+
+// Backend base for API redirects (optional)
+const BACKEND_BASE = process.env.BACKEND_BASE || "http://localhost:5000";
 
 // Health endpoint for external checks
 app.get("/health", (_req, res) => {
-  res.json({ ok: true, service: "frontend", ts: Date.now() });
+  res.json({ ok: true, service: "frontend", ts: Date.now(), baseDir });
 });
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Redirect any /api/* calls to backend (keeps manual testing convenient)
+app.all("/api/*", (req, res) => {
+  const target = BACKEND_BASE + req.originalUrl;
+  // Use 307 to preserve method & body
+  return res.redirect(307, target);
+});
 
 // JSON Array (sample users)
 const users = [
@@ -45,5 +64,5 @@ app.post("/login", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Frontend running on http://localhost:${PORT}/login`);
+  console.log(`Frontend running on http://localhost:${PORT}/login (views from ${path.join(baseDir, 'views')})`);
 });

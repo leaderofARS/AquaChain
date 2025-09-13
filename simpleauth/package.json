@@ -4,7 +4,13 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "sepolia:check": "node ./scripts/sepolia-check.mjs",
+    "contract:demo": "node ./scripts/contract-demo.mjs",
+    "serial:list": "node ./scripts/list-ports.mjs",
+    "serial:monitor": "node ./scripts/serial-monitor.mjs",
+    "serial:reset": "node ./scripts/serial-reset.mjs"
   },
   "keywords": [],
   "author": "",
@@ -16,8 +22,11 @@
     "body-parser": "^2.2.0",
     "dotenv": "^17.2.2",
     "ejs": "^3.1.10",
+    "ethers": "^6.13.4",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "serialport": "^12.0.0",
+    "@serialport/parser-readline": "^12.0.0"
   }
 }

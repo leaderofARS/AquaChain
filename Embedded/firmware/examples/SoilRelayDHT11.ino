@@ -1,8 +1,3 @@
-/*
-  Soil Moisture + Relay + DHT11 baseline sketch
-  This is the exact sketch you provided, preserved under examples.
-*/
-
 /****************************************************
   ESP32 Soil Moisture Sensor + Relay Control + DHT11
   --------------------------------------------------
@@ -94,13 +89,13 @@ void loop() {
   // === Relay Control Logic ===
   // Relay OFF when moisture < threshold (soil too dry)
   // Relay ON when moisture >= threshold (soil ok/wet)
-  if (moisturePercent > moistureThreshold) {
+  if (moisturePercent < moistureThreshold) {
     // Soil dry → relay OFF
     Serial.println("Status: Soil is DRY 🌵 → Relay OFF");
     digitalWrite(relayPin, LOW); // Relay OFF (pump OFF)
   } else {
     // Soil moisture ok → relay ON
-    Serial.println("Status: Soil moisture < threshold 🌱 → Relay ON");
+    Serial.println("Status: Soil moisture ≥ threshold 🌱 → Relay ON");
     digitalWrite(relayPin, HIGH); // Relay ON (pump ON)
   }
 

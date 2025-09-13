@@ -18,9 +18,12 @@ const int RELAY_PIN = 25;
 const int AIR_VALUE = 3200;   // dry
 const int WATER_VALUE = 1400; // wet
 
-// Decision threshold (pump ON when moisture < threshold)
-const int MOISTURE_THRESHOLD = 30;  // dry if below this
-const unsigned long MIN_RELAY_CYCLE_MS = 1000UL; // 1s minimum between toggles
+// Hysteresis thresholds and timing (to prevent relay chattering)
+const int MOISTURE_ON_THRESHOLD = 30;   // turn ON below this (dry)
+const int MOISTURE_OFF_THRESHOLD = 40;  // turn OFF above this (rewet)
+const unsigned long MIN_RELAY_CYCLE_MS = 1000UL; // basic debounce between toggles
+const unsigned long MIN_ON_MS = 5000UL;  // minimum time to keep pump ON
+const unsigned long MIN_OFF_MS = 3000UL; // minimum time to keep pump OFF
 
 // Sliding window
 const int WINDOW_SIZE = 10;
@@ -30,6 +33,8 @@ int wIdx = 0, wCount = 0;
 // Relay state
 bool relayOn = false;
 unsigned long lastRelayChange = 0;
+unsigned long lastOnTime = 0;
+unsigned long lastOffTime = 0;
 
 // WiFi reconnect
 unsigned long lastWiFiAttempt = 0;
@@ -113,11 +118,22 @@ int slidingAvg(int v) {
   return (int)(sum / (wCount > 0 ? wCount : 1));
 }
 
+// Read soil ADC with simple noise reduction (5 samples, drop min/max)
+int readSoilADC() {
+  const int N = 5;
+  int samples[N];
+  for (int i = 0; i < N; i++) { samples[i] = analogRead(SOIL_PIN); delay(5); }
+  int sum = 0, minv = 4095, maxv = 0;
+  for (int i = 0; i < N; i++) { int s = samples[i]; sum += s; if (s < minv) minv = s; if (s > maxv) maxv = s; }
+  return (sum - minv - maxv) / (N - 2);
+}
+
 void setRelay(bool on) {
   unsigned long now = millis();
   if (relayOn == on) return;
   if (now - lastRelayChange < MIN_RELAY_CYCLE_MS) return; // protect relay
   relayOn = on; lastRelayChange = now;
+  if (relayOn) lastOnTime = now; else lastOffTime = now;
   digitalWrite(RELAY_PIN, relayOn ? HIGH : LOW);
 }
 
@@ -164,11 +180,13 @@ void setup() {
   delay(1000);
   Serial.println("\nBooting rule-based firmware...");
 
-  pinMode(RELAY_PIN, OUTPUT);
-  digitalWrite(RELAY_PIN, LOW); // off
+pinMode(RELAY_PIN, OUTPUT);
+digitalWrite(RELAY_PIN, LOW); // off
+lastOffTime = millis();
+lastRelayChange = millis();
 
-  dht.begin();
-  ensureFS();
+dht.begin();
+ensureFS();
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -210,19 +228,16 @@ void loop() {
     Serial.println("WiFi lost; offline mode");
   }
 
-  // Read sensors
-  int adc = analogRead(SOIL_PIN);
-  int moisture = moisturePercentFromAdc(adc);
-  int avgMoisture = slidingAvg(moisture);
-  float humidity = dht.readHumidity();
-  float tempC = dht.readTemperature();
+// Read sensors (noise-reduced ADC)
+int adc = readSoilADC();
+int moisture = moisturePercentFromAdc(adc);
+int avgMoisture = slidingAvg(moisture);
+float humidity = dht.readHumidity();
+float tempC = dht.readTemperature();
 
-  // Decision: turn ON pump within ~1s when moisture < threshold
-  if (moisture < MOISTURE_THRESHOLD) {
-    setRelay(true);
-  } else {
-    setRelay(false);
-  }
+// Simple condition: relay ON only when instantaneous moisture < 30%
+bool desired = (moisture < 30);
+setRelay(desired);
 
   // Build snapshot
   DynamicJsonDocument doc(1024);
