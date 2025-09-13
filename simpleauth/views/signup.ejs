@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Aquachain Signup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+  <!-- Vanta.js + Three.js for waves -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r121/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vanta/dist/vanta.waves.min.js"></script>
+
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+    }
+    #background {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      z-index: -1; /* stays behind everything */
+    }
+  </style>
+</head>
+<body class="min-h-screen w-full flex items-center justify-center">
+
+  <!-- Background container -->
+  <div id="background"></div>
+
+  <!-- Signup Card -->
+  <div class="bg-white/90 backdrop-blur-lg shadow-2xl rounded-3xl p-10 w-full max-w-md border border-[#00B4D8] relative z-10">
+    <div class="flex flex-col items-center space-y-3">
+      <img src="/aquachain-logo.png" alt="AQUACHAIN Logo" class="h-10 w-10 object-contain">
+
+      <h1 class="text-3xl font-bold text-[#00B4D8] tracking-wider">AQUA CHAIN</h1>
+      <p class="text-slate-600">Create your account</p>
+    </div>
+
+    <!-- Form -->
+    <form action="/signup" method="POST" class="mt-8 space-y-6">
+      <!-- Username -->
+      <div>
+        <label for="username" class="block text-sm font-medium text-slate-700">Username</label>
+        <input type="text" name="username" id="username" required
+               class="mt-2 block w-full rounded-xl border border-[#38A169] shadow-sm focus:border-[#00B4D8] focus:ring-2 focus:ring-[#90E0EF] p-3 placeholder-slate-400"/>
+      </div>
+
+      <!-- Password -->
+      <div>
+        <label for="password" class="block text-sm font-medium text-slate-700">Password</label>
+        <input type="password" name="password" id="password" required
+               class="mt-2 block w-full rounded-xl border border-[#38A169] shadow-sm focus:border-[#00B4D8] focus:ring-2 focus:ring-[#90E0EF] p-3 placeholder-slate-400"/>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit"
+        class="w-full bg-gradient-to-r from-[#006D77] to-[#00B4D8] text-white font-semibold py-3 rounded-xl shadow-lg hover:from-[#00B4D8] hover:to-[#90E0EF] transition-all transform hover:-translate-y-1 hover:scale-105">
+        Sign Up
+      </button>
+
+      <!-- Login Redirect -->
+      <p class="text-center text-sm text-slate-600">
+        Already have an account?
+        <a href="/login" class="text-[#000000] font-medium hover:text-[#006D77] hover:underline transition">Login here</a>
+      </p>
+    </form>
+  </div>
+
+  <script>
+  VANTA.WAVES({
+    el: "#background",
+    mouseControls: true,
+    touchControls: true,
+    minHeight: 200.00,
+    minWidth: 200.00,
+    scale: 1.00,
+    scaleMobile: 1.00,
+    color: 0x90E0EF,   // lighter aqua blue
+    shininess: 60.00,
+    waveHeight: 15.00,
+    waveSpeed: 0.80,
+    zoom: 0.95
+  })
+</script>
+
+</body>
+</html>
