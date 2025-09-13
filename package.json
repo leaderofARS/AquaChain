@@ -18,9 +18,11 @@
   },
   "homepage": "https://github.com/Devapriya-kp/AquaChain#readme",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "body-parser": "^2.2.0",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "pg": "^8.16.3"
   }
 }

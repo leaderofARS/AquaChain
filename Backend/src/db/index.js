@@ -14,6 +14,8 @@ let pool;
 let useMemory = false;
 const memoryReadings = new Map(); // dataHash -> snapshot
 const memoryCommands = new Map(); // device_id -> [commands]
+const memoryTxs = new Map(); // tx_hash -> row
+const memoryTxByDataHash = new Map(); // data_hash -> tx_hash
 
 export async function init() {
   try {
@@ -44,6 +46,19 @@ export async function init() {
         delivered BOOLEAN DEFAULT FALSE
       );
       CREATE INDEX IF NOT EXISTS idx_control_queue_device ON control_queue(device_id, delivered);
+      CREATE TABLE IF NOT EXISTS txs (
+        id BIGSERIAL PRIMARY KEY,
+        data_hash TEXT NOT NULL,
+        zone TEXT,
+        tx_hash TEXT UNIQUE,
+        status TEXT NOT NULL CHECK (status IN ('pending','confirmed','failed')),
+        block_number BIGINT,
+        raw_payload JSONB,
+        created_at TIMESTAMPTZ DEFAULT now(),
+        confirmed_at TIMESTAMPTZ
+      );
+      CREATE INDEX IF NOT EXISTS idx_txs_data_hash ON txs(data_hash);
+      CREATE INDEX IF NOT EXISTS idx_txs_status ON txs(status);
     `);
     console.log('PostgreSQL ready');
   } catch (err) {
@@ -135,4 +150,66 @@ export async function fetchRecentReadings(limit = 10) {
     created_at: r.created_at,
     raw: r.raw
   }));
+}
+
+// TX tracking helpers
+export async function insertPendingTx(data_hash, zone, tx_hash, raw_payload) {
+  if (useMemory) {
+    const row = { data_hash, zone, tx_hash, status: 'pending', block_number: null, raw_payload: raw_payload || null, created_at: new Date(), confirmed_at: null };
+    memoryTxs.set(tx_hash, row);
+    memoryTxByDataHash.set(data_hash, tx_hash);
+    return { inserted: 1 };
+  }
+  const q = `INSERT INTO txs (data_hash, zone, tx_hash, status, raw_payload) VALUES ($1,$2,$3,'pending',$4)
+             ON CONFLICT (tx_hash) DO UPDATE SET data_hash=EXCLUDED.data_hash RETURNING id`;
+  await pool.query(q, [data_hash, zone || null, tx_hash, raw_payload || null]);
+  return { inserted: 1 };
+}
+
+export async function markTxConfirmedByTxHash(tx_hash, block_number) {
+  if (useMemory) {
+    const row = memoryTxs.get(tx_hash);
+    if (!row) return { updated: 0 };
+    row.status = 'confirmed';
+    row.block_number = block_number || row.block_number || null;
+    row.confirmed_at = new Date();
+    return { updated: 1 };
+  }
+  const q = `UPDATE txs SET status='confirmed', block_number=$2, confirmed_at=now() WHERE tx_hash=$1 AND status<>'confirmed'`;
+  const res = await pool.query(q, [tx_hash, block_number || null]);
+  return { updated: res.rowCount };
+}
+
+export async function markTxConfirmedByDataHash(data_hash, block_number) {
+  if (useMemory) {
+    const txh = memoryTxByDataHash.get(data_hash);
+    if (!txh) return { updated: 0 };
+    return markTxConfirmedByTxHash(txh, block_number);
+  }
+  const q = `UPDATE txs SET status='confirmed', block_number=COALESCE($2, block_number), confirmed_at=now() WHERE data_hash=$1 AND status='pending'`;
+  const res = await pool.query(q, [data_hash, block_number || null]);
+  return { updated: res.rowCount };
+}
+
+export async function markTxFailed(tx_hash, error_message) {
+  if (useMemory) {
+    const row = memoryTxs.get(tx_hash);
+    if (!row) return { updated: 0 };
+    row.status = 'failed';
+    row.error = error_message || 'failed';
+    return { updated: 1 };
+  }
+  const q = `UPDATE txs SET status='failed', raw_payload = COALESCE(raw_payload, '{}'::jsonb) || jsonb_build_object('error',$2) WHERE tx_hash=$1`;
+  const res = await pool.query(q, [tx_hash, error_message || 'failed']);
+  return { updated: res.rowCount };
+}
+
+export async function fetchUnconfirmedTxs(limit = 100) {
+  if (useMemory) {
+    const arr = Array.from(memoryTxs.values()).filter((r) => r.status === 'pending');
+    return arr.slice(0, Math.max(1, Math.min(1000, limit)));
+  }
+  const q = `SELECT data_hash, zone, tx_hash, status, block_number, created_at FROM txs WHERE status='pending' ORDER BY created_at ASC LIMIT $1`;
+  const res = await pool.query(q, [Math.max(1, Math.min(1000, parseInt(limit, 10) || 100))]);
+  return res.rows;
 }

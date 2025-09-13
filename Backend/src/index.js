@@ -8,6 +8,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { init as initDb, upsertReading, bulkUpsert, fetchNextControl, enqueueControl, fetchRecentReadings } from './db/index.js';
 import { computeDataHash } from './utils/hash.js';
+import { init as initAnchor, isEnabled as anchorEnabled, anchorSnapshot, anchorDataHash } from './services/blockchainClient.js';
 
 dotenv.config();
 
@@ -152,6 +153,49 @@ app.post('/api/irrigate', async (req, res) => {
   }
 });
 
+// Anchor endpoint: accepts either a full snapshot or a precomputed data_hash + zone
+// Body examples:
+// 1) { snapshot: { ...device payload... } }
+// 2) { data_hash: "0x...", zone: "zone-1" }
+app.post('/api/anchor', async (req, res) => {
+  try {
+    let tx;
+    if (req.body && req.body.snapshot) {
+      const snap = req.body.snapshot;
+      const err = validateSnapshot(snap);
+      if (err) return res.status(400).json({ ok: false, error: err });
+      if (!anchorEnabled()) return res.status(503).json({ ok: false, error: 'anchor_unavailable' });
+      tx = await anchorSnapshot(snap);
+    } else if (req.body && req.body.data_hash) {
+      const dataHash = req.body.data_hash;
+      const zone = req.body.zone || '';
+      if (!/^0x[0-9a-fA-F]{64}$/.test(String(dataHash))) {
+        return res.status(400).json({ ok: false, error: 'invalid data_hash' });
+      }
+      if (!anchorEnabled()) return res.status(503).json({ ok: false, error: 'anchor_unavailable' });
+      tx = await anchorDataHash(dataHash, zone, { request: 'precomputed_hash' });
+    } else {
+      return res.status(400).json({ ok: false, error: 'snapshot or data_hash required' });
+    }
+    return res.status(200).json({ ok: true, tx_hash: tx.txHash });
+  } catch (e) {
+    console.error('anchor error', e);
+    return res.status(500).json({ ok: false, error: 'internal_error' });
+  }
+});
+
+// Force API JSON responses for not found and parse errors
+app.use('/api', (req, res, next) => {
+  res.status(404).json({ ok: false, error: 'not_found', path: req.originalUrl });
+});
+
+app.use((err, req, res, next) => {
+  const isJsonParse = err && err.type === 'entity.parse.failed';
+  if (isJsonParse) return res.status(400).json({ ok: false, error: 'invalid_json' });
+  console.error('unhandled error', err);
+  return res.status(500).json({ ok: false, error: 'internal_error' });
+});
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: frontendOrigin, credentials: true },
@@ -164,7 +208,8 @@ const host = '0.0.0.0';
 const displayHost = process.env.PUBLIC_HOST || 'localhost';
 
 // Initialize DB then start server
-initDb().finally(() => {
+initDb().finally(async () => {
+  await initAnchor(io);
   server.listen(port, host, () => {
     console.log(`Backend listening on port ${port} (bind: ${host})`);
     console.log(`Open http://${displayHost}:${port}/health to verify`);
