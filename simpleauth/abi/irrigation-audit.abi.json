@@ -1,0 +1,5 @@
+[
+  "event Log(bytes32 indexed dataHash, string zone, uint256 ts, address actor)",
+  "function log(bytes32 dataHash, string zone) external"
+]
+

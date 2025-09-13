@@ -2,21 +2,57 @@ import express from "express";
 import bodyParser from "body-parser";
 import pg from "pg";
 import bcrypt from "bcrypt";
+import dotenv from "dotenv";
 
+dotenv.config();
 const app = express();
-const port = 3000;
+const port = Number(process.env.PORT) || 3000;
 
-// PostgreSQL config
-const db = new pg.Client({
-  user: "postgres",
-  host: "localhost",
-  database: "smart_irrigation",
-  password: "PRAKULPSHETTY", // change this
-  port: 5432,
-});
+// PostgreSQL config (prefer env vars or DATABASE_URL)
+const dbConfig = process.env.DATABASE_URL
+  ? {
+      connectionString: process.env.DATABASE_URL,
+      ssl:
+        (process.env.PGSSL && process.env.PGSSL.toLowerCase() === "true") ||
+        process.env.PGSSLMODE === "require"
+          ? { rejectUnauthorized: false }
+          : false,
+    }
+  : {
+      user: process.env.PGUSER || process.env.POSTGRES_USER || "postgres",
+      host: process.env.PGHOST || "localhost",
+      database: process.env.PGDATABASE || "smart_irrigation",
+      password: process.env.PGPASSWORD || process.env.POSTGRES_PASSWORD,
+      port: Number(process.env.PGPORT) || 5432,
+    };
+
+const db = new pg.Client(dbConfig);
+
+// Log DB target (without secrets)
+if (process.env.DATABASE_URL) {
+  console.log("Using DATABASE_URL for PostgreSQL connection");
+} else {
+  console.log(
+    `PostgreSQL target -> user=${dbConfig.user}, host=${dbConfig.host}, port=${dbConfig.port}, database=${dbConfig.database}`
+  );
+}
 
 db.connect()
-  .then(() => console.log("✅ Connected to PostgreSQL"))
+  .then(async () => {
+    console.log("✅ Connected to PostgreSQL");
+    try {
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS users (
+          id SERIAL PRIMARY KEY,
+          username TEXT UNIQUE NOT NULL,
+          password TEXT NOT NULL
+        );
+      `);
+      console.log("✅ Ensured users table exists");
+    } catch (schemaErr) {
+      console.error("⚠ Could not ensure users table:", schemaErr.message || schemaErr);
+    }
+  })
   .catch((err) => console.error("❌ DB connection error:", err));
 
 app.set("view engine", "ejs");
@@ -43,7 +79,7 @@ app.post("/signup", async (req, res) => {
       username,
     ]);
     if (checkUser.rows.length > 0) {
-      return res.send("⚠️ Username already exists. Please login.");
+      return res.send("⚠ Username already exists. Please login.");
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     await db.query(

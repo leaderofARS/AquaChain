@@ -131,11 +131,17 @@ export async function fetchRecentReadings(limit = 10) {
   if (useMemory) {
     const arr = Array.from(memoryReadings.values());
     arr.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+    // In memory mode, tx info is not tracked per reading; return snapshots only
     return arr.slice(0, Math.max(1, Math.min(100, limit)));
   }
   const lim = Math.max(1, Math.min(100, parseInt(limit, 10) || 10));
-  const q = `SELECT device_id, zone, ts, soil_moisture_pct, temp_c, humidity_pct, valve_state, edge_decision, data_hash, raw, created_at
-             FROM readings ORDER BY ts DESC LIMIT $1`;
+  const q = `SELECT r.device_id, r.zone, r.ts, r.soil_moisture_pct, r.temp_c, r.humidity_pct, r.valve_state, r.edge_decision,
+                    r.data_hash, r.raw, r.created_at,
+                    t.tx_hash, t.status AS tx_status, t.block_number
+             FROM readings r
+             LEFT JOIN txs t ON t.data_hash = r.data_hash
+             ORDER BY r.ts DESC
+             LIMIT $1`;
   const res = await pool.query(q, [lim]);
   return res.rows.map((r) => ({
     device_id: r.device_id,
@@ -147,6 +153,9 @@ export async function fetchRecentReadings(limit = 10) {
     valve_state: r.valve_state,
     edge_decision: r.edge_decision,
     data_hash: r.data_hash,
+    tx_hash: r.tx_hash || null,
+    tx_status: r.tx_status || null,
+    block_number: r.block_number || null,
     created_at: r.created_at,
     raw: r.raw
   }));

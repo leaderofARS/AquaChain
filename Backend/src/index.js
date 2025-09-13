@@ -86,7 +86,20 @@ app.post('/api/sensor', requireDeviceToken, async (req, res) => {
   try {
     const { inserted } = await upsertReading(snap, dataHash);
     io.emit('telemetry', { ...snap, dataHash, inserted });
-    return res.status(200).json({ ok: true, dataHash, inserted });
+
+    // Attempt to anchor on-chain if enabled
+    let txHash = null;
+    if (anchorEnabled()) {
+      try {
+        const r = await anchorDataHash(dataHash, snap.zone || '', { request: 'sensor_ingest' });
+        txHash = r?.txHash || null;
+        if (txHash) io.emit('tx_update', { status: 'pending', data_hash: dataHash, zone: snap.zone || '', tx_hash: txHash });
+      } catch (anchorErr) {
+        console.warn('[anchor] sensor route anchor failed:', anchorErr?.message || anchorErr);
+      }
+    }
+
+    return res.status(200).json({ ok: true, dataHash, inserted, tx_hash: txHash });
   } catch (e) {
     console.error('sensor upsert error', e);
     return res.status(500).json({ ok: false, error: 'internal_error' });
