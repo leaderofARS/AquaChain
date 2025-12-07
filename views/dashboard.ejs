@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaChain - Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #0ea5e9;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .brand img {
+            height: 40px;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-name {
+            font-weight: 500;
+        }
+
+        .btn-logout {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .btn-logout:hover {
+            border-color: var(--text-main);
+            color: var(--text-main);
+        }
+
+        /* Main Layout */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.5rem;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        /* Stat Cards */
+        .stat-card {
+            grid-column: span 3;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        @media (max-width: 1024px) {
+            .stat-card {
+                grid-column: span 6;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .stat-card {
+                grid-column: span 12;
+            }
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+        }
+
+        .stat-unit {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .stat-indicator {
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .text-success {
+            color: var(--success);
+        }
+
+        .text-warning {
+            color: var(--warning);
+        }
+
+        .text-danger {
+            color: var(--danger);
+        }
+
+        .text-primary {
+            color: var(--primary);
+        }
+
+        /* Chart Section */
+        .chart-section {
+            grid-column: span 8;
+            height: 400px;
+        }
+
+        @media (max-width: 1024px) {
+            .chart-section {
+                grid-column: span 12;
+            }
+        }
+
+        /* Controls Section */
+        .controls-section {
+            grid-column: span 4;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .controls-section {
+                grid-column: span 12;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .controls-section {
+                display: flex;
+            }
+        }
+
+        .control-panel {
+            flex: 1;
+        }
+
+        .btn-irrigate {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--primary), #3b82f6);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-irrigate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(14, 165, 233, 0.5);
+        }
+
+        .btn-irrigate:active {
+            transform: translateY(0);
+        }
+
+        .btn-irrigate.active {
+            background: linear-gradient(135deg, var(--success), #059669);
+            pointer-events: none;
+        }
+
+        /* Recent Activity / Blockchain */
+        .activity-section {
+            grid-column: span 12;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        td {
+            font-size: 0.95rem;
+        }
+
+        .hash-truncate {
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-family: monospace;
+            color: var(--primary);
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .status-confirmed {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .status-failed {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--success);
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="brand">
+            <img src="/aquachain-logo.png" alt="Logo">
+            AquaChain
+        </div>
+        <div class="user-profile">
+            <span class="user-name">Welcome, <%= username %></span>
+            <a href="/login" class="btn-logout">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Stats Row -->
+        <div class="card stat-card">
+            <div class="card-header">
+                <span class="card-title">Soil Moisture</span>
+                <span class="live-dot"></span>
+            </div>
+            <div class="stat-value" id="moisture-val">--<span class="stat-unit">%</span></div>
+            <div class="stat-indicator text-success" id="moisture-status">Optimal</div>
+        </div>
+
+        <div class="card stat-card">
+            <div class="card-header">
+                <span class="card-title">Temperature</span>
+            </div>
+            <div class="stat-value" id="temp-val">--<span class="stat-unit">°C</span></div>
+            <div class="stat-indicator text-warning" id="temp-status">Warm</div>
+        </div>
+
+        <div class="card stat-card">
+            <div class="card-header">
+                <span class="card-title">Humidity</span>
+            </div>
+            <div class="stat-value" id="humidity-val">--<span class="stat-unit">%</span></div>
+            <div class="stat-indicator text-primary" id="humidity-status">Normal</div>
+        </div>
+
+        <div class="card stat-card">
+            <div class="card-header">
+                <span class="card-title">Valve Status</span>
+            </div>
+            <div class="stat-value" id="valve-val">OFF</div>
+            <div class="stat-indicator text-muted" id="valve-status">Idle</div>
+        </div>
+
+        <!-- Chart Row -->
+        <div class="card chart-section">
+            <div class="card-header">
+                <span class="card-title">Moisture Trends (Live)</span>
+            </div>
+            <canvas id="moistureChart"></canvas>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-section">
+            <div class="card control-panel">
+                <div class="card-header">
+                    <span class="card-title">Manual Override</span>
+                </div>
+                <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">
+                    Force irrigation for 10 seconds. This action is logged on-chain.
+                </p>
+                <button class="btn-irrigate" id="btn-irrigate" onclick="triggerIrrigation()">
+                    <span>💧</span> Start Irrigation
+                </button>
+            </div>
+
+            <div class="card control-panel">
+                <div class="card-header">
+                    <span class="card-title">System Health</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span style="color: var(--text-muted)">Backend</span>
+                    <span class="text-success">Online</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span style="color: var(--text-muted)">Database</span>
+                    <span class="text-success">Connected</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-muted)">Blockchain</span>
+                    <span class="text-warning">Syncing...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Blockchain Activity -->
+        <div class="card activity-section">
+            <div class="card-header">
+                <span class="card-title">Blockchain Audit Log (Recent Transactions)</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Device ID</th>
+                        <th>Zone</th>
+                        <th>Data Hash</th>
+                        <th>TX Hash</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tx-table-body">
+                    <!-- Rows injected via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        // If served from backend, relative path works. If from frontend, we might need full URL.
+        // Assuming unified deployment or proxy.
+        const socket = io({ path: '/socket.io' });
+
+        // --- Chart Setup ---
+        const ctx = document.getElementById('moistureChart').getContext('2d');
+        const moistureChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Soil Moisture (%)',
+                    data: [],
+                    borderColor: '#0ea5e9',
+                    backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: '#334155' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // --- Socket Events ---
+        socket.on('connect', () => {
+            console.log('Connected to backend');
+        });
+
+        socket.on('telemetry', (data) => {
+            console.log('Telemetry:', data);
+            updateStats(data);
+            updateChart(data);
+            addTxRow(data, 'pending'); // Optimistic UI
+        });
+
+        socket.on('tx_update', (data) => {
+            console.log('TX Update:', data);
+            updateTxStatus(data);
+        });
+
+        // --- UI Updaters ---
+        function updateStats(data) {
+            if (data.soil_moisture_pct !== undefined) {
+                document.getElementById('moisture-val').innerHTML = `${data.soil_moisture_pct}<span class="stat-unit">%</span>`;
+            }
+            if (data.temp_c !== undefined) {
+                document.getElementById('temp-val').innerHTML = `${data.temp_c.toFixed(1)}<span class="stat-unit">°C</span>`;
+            }
+            if (data.humidity_pct !== undefined) {
+                document.getElementById('humidity-val').innerHTML = `${data.humidity_pct}<span class="stat-unit">%</span>`;
+            }
+            if (data.valve_state !== undefined) {
+                const isOpen = data.valve_state === 1;
+                const el = document.getElementById('valve-val');
+                el.innerText = isOpen ? 'OPEN' : 'CLOSED';
+                el.className = `stat-value ${isOpen ? 'text-primary' : ''}`;
+                document.getElementById('valve-status').innerText = isOpen ? 'Irrigating' : 'Idle';
+            }
+        }
+
+        function updateChart(data) {
+            const now = new Date().toLocaleTimeString();
+            if (moistureChart.data.labels.length > 20) {
+                moistureChart.data.labels.shift();
+                moistureChart.data.datasets[0].data.shift();
+            }
+            moistureChart.data.labels.push(now);
+            moistureChart.data.datasets[0].data.push(data.soil_moisture_pct || 0);
+            moistureChart.update();
+        }
+
+        function addTxRow(data, status) {
+            const tbody = document.getElementById('tx-table-body');
+            const row = document.createElement('tr');
+            row.id = `row-${data.dataHash || data.data_hash}`;
+
+            const time = new Date().toLocaleTimeString();
+            const txHashDisplay = data.tx_hash ?
+                `<a href="https://sepolia.etherscan.io/tx/${data.tx_hash}" target="_blank" class="hash-truncate">${data.tx_hash}</a>` :
+                '<span class="text-muted">Pending...</span>';
+
+            row.innerHTML = `
+                <td>${time}</td>
+                <td>${data.device_id || 'Unknown'}</td>
+                <td>${data.zone || 'Default'}</td>
+                <td class="hash-truncate" title="${data.dataHash || data.data_hash}">${data.dataHash || data.data_hash}</td>
+                <td class="tx-cell">${txHashDisplay}</td>
+                <td><span class="status-badge status-${status}">${status.toUpperCase()}</span></td>
+            `;
+
+            tbody.insertBefore(row, tbody.firstChild);
+            if (tbody.children.length > 10) tbody.lastChild.remove();
+        }
+
+        function updateTxStatus(data) {
+            // Find row by data_hash
+            const row = document.getElementById(`row-${data.data_hash}`);
+            if (row) {
+                const statusSpan = row.querySelector('.status-badge');
+                statusSpan.className = `status-badge status-${data.status}`;
+                statusSpan.innerText = data.status.toUpperCase();
+
+                if (data.tx_hash) {
+                    const txCell = row.querySelector('.tx-cell');
+                    txCell.innerHTML = `<a href="https://sepolia.etherscan.io/tx/${data.tx_hash}" target="_blank" class="hash-truncate">${data.tx_hash}</a>`;
+                }
+            } else {
+                // If row doesn't exist (maybe missed telemetry), add it
+                addTxRow({ ...data, device_id: 'System', zone: data.zone }, data.status);
+            }
+        }
+
+        // --- Actions ---
+        async function triggerIrrigation() {
+            const btn = document.getElementById('btn-irrigate');
+            btn.classList.add('active');
+            btn.innerHTML = '<span>⏳</span> Sending...';
+
+            try {
+                // Assuming device_id is hardcoded or selected. Using a default for now.
+                const res = await fetch('/api/irrigate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        device_id: 'esp32-devkitv1-01', // TODO: Make dynamic
+                        zone: 'zone-1',
+                        force_relay: true,
+                        duration_ms: 10000
+                    })
+                });
+                const json = await res.json();
+                if (json.ok) {
+                    btn.innerHTML = '<span>✅</span> Sent!';
+                    setTimeout(() => {
+                        btn.classList.remove('active');
+                        btn.innerHTML = '<span>💧</span> Start Irrigation';
+                    }, 2000);
+                } else {
+                    throw new Error(json.error);
+                }
+            } catch (e) {
+                console.error(e);
+                btn.classList.remove('active');
+                btn.innerHTML = '<span>❌</span> Failed';
+                setTimeout(() => {
+                    btn.innerHTML = '<span>💧</span> Start Irrigation';
+                }, 2000);
+            }
+        }
+
+        // Initial Fetch (Optional)
+        fetch('/api/readings/recent').then(r => r.json()).then(d => {
+            if (d.ok && d.rows) {
+                d.rows.reverse().forEach(row => {
+                    updateChart(row);
+                    addTxRow(row, row.tx_status || 'confirmed'); // Assuming historical are confirmed
+                });
+            }
+        });
+
+    </script>
+</body>
+
+</html>
